@@ -33,7 +33,7 @@ post_install_actions:
     if [ -f ${DDEV_APPROOT}/composer.json ]; then
       composer_name=$(jq -r '.name' ${DDEV_APPROOT}/composer.json)
       if [ ! -z "$composer_name" ]; then
-        find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' "s|vendor/custom-extension-key|${composer_name}|g" {} +
+        find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' -e "s|vendor/custom-extension-key|${composer_name}|g" {} +
       fi
     fi
 
@@ -44,10 +44,10 @@ post_install_actions:
       echo "DDEV_PROJECT environment variable is not set."
       exit 1
     fi
-    find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' "s/custom-extension-key/${extension_name}/g" {} +
+    find ${DDEV_APPROOT}/.ddev -type f -exec sed -i'' -e "s/custom-extension-key/${extension_name}/g" {} +    
     
     extension_key=$(echo "$extension_name" | tr '-' '_')
-    find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' "s/custom_extension_key/${extension_key}/g" {} +
+    find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' -e "s/custom_extension_key/${extension_key}/g" {} +
     
     echo "Set extension key to ${extension_key} and extension name to ${extension_name} in"
     echo " - .ddev/apache/10.conf"

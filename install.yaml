@@ -1,117 +1,107 @@
-# Details about the install.yaml file are at https://ddev.readthedocs.io/en/stable/users/extend/additional-services/#sections-and-features-of-ddev-get-add-on-installyaml
+name: typo3-multi-version-extension
 
-name: addon-template
-
-# pre_install_actions - list of actions to run before installing the addon.
-# Examples would be removing an extraneous docker volume,
-# or doing a sanity check for requirements.
-# DDEV environment variables can be interpolated into these actions
-# pre_install_actions are executed in the context of the target project's root directory.
 pre_install_actions:
-  # - |
-  #   #ddev-description:Check architecture type for incompatible arm64 type
-  #   if [ "$(uname -m)" = "arm64" -o "$(uname -m)" = "aarch64" ]; then
-  #     echo "This package does not work on arm64 (Apple Silicon) machines";
-  #     exit 1;
-  #   fi
+  - |
+    #ddev-description:Check for incompatible server type
+    if [ "${DDEV_WEBSERVER_TYPE}" != "apache-fpm" ]; then
+      echo "This package only works with the apache webserver";
+      exit 1;
+    fi
 
-  # - "docker volume rm ddev-${DDEV_PROJECT}_solr 2>/dev/null || true"
-
-  # You can also check for client DDEV version with ddev_version_constraint (see below).
-  # - |
-  #   #ddev-description:Checking DDEV version
-  #   if ! ( ddev debug capabilities 2>/dev/null | grep corepack >/dev/null 2>&1 ) ; then
-  #     echo "This add-on requires DDEV v1.23+ or higher, please upgrade." && exit 2
-  #   fi
-
-  # - 'echo "what is your platform.sh token" && read x'
-
-  # This item shows templating using DDEV environment variables.
-  # - |
-  #   #ddev-description:Touch a file to create it
-  #   touch ${DDEV_APPROOT}/.ddev/somefile.${DDEV_PROJECT_TYPE}.${DDEV_DOCROOT}.txt
-
-  # This item shows complex go templating possibilities based on yaml_read_files
-  # - |
-  #   #ddev-description:Create a config.platformsh.yaml
-  #   cat <<EOF >${DDEV_APPROOT}/.ddev/config.platformsh.yaml
-  #   php_version: {{ trimPrefix "php:" .platformapp.type }}
-  #   database:
-  #     type: {{ regexReplaceAll ":.*$" .services.db.type "" }}
-  #     version: {{ regexReplaceAll "^.*:" .services.db.type "" }}
-
-  #   docroot: {{ dig "web" "locations" "/" "root" "notfound" .platformapp }}
-  #   {{- if eq .platformapp.build.flavor "composer" }}
-  #   hooks:
-  #     post-start:
-  #       - composer: install
-  #   {{- if .platformapp.hooks.deploy }}
-  #       - exec: "{{ trimAll "\n" .platformapp.hooks.deploy | splitList "\n" | join ` && ` }}"
-  #   {{- end }}
-  #   {{- end }}
-
-  #   EOF
-
-# list of files and directories listed that are copied into project .ddev directory
-# Each file should contain #ddev-generated so it can be replaced by a later `ddev add-on get`
-# if it hasn't been modified by the user.
-# DDEV environment variables can be interpolated into these filenames
-# If you use directories, they must be directories that are managed
-# by this add-on, or removal could remove things that are not owned by it
 project_files:
-  - docker-compose.addon-template.yaml
-  # - commands/web/add-on-command
-  # - commands/host/add-on-command-host
-  # - web-build/Dockerfile.addon-template
-  # - some-directory/file1.txt
-  # - some-directory/file2.txt
-  # - extra_files_dir_created_by_this_template/
-  # - somefile.sh
+  - .typo3-setup/scripts/utils.sh
+  - .typo3-setup/templates/index.php
+  - .typo3-setup/Tests/.typo3-setup/
+  - apache/10.conf
+  - apache/20.conf
+  - commands/host/launch
+  - commands/web/.install-11
+  - commands/web/.install-12
+  - commands/web/.install-13
+  - commands/web/11
+  - commands/web/12
+  - commands/web/13
+  - commands/web/all
+  - commands/web/install
+  - docker-compose.typo3-setup.yaml
 
-# List of files and directories that are copied into the global .ddev directory
-# DDEV environment variables can be interpolated into these filenames
-# Note that if these files are used by a team, you will need to automate their installation
-# by adding `ddev add-on get` to your workflow to ensure that everyone has them.
-# Otherwise, use 'project_files' to commit them to the repository.
-global_files:
-  # - commands/web/add-on-command
-  # - homeadditions/some-file.txt
-
-# Version constraint for DDEV that will be validated against the running DDEV executable
-# and prevent add-on from being installed if it doesn't validate.
-# See https://github.com/Masterminds/semver#checking-version-constraints for constraint rules.
-# Available with DDEV v1.23.4+, and works only for DDEV v1.23.4+ binaries
 ddev_version_constraint: '>= v1.24.2'
 
-# List of add-on names that this add-on depends on
-dependencies:
-  # - redis
-
-# DDEV environment variables can be interpolated into these actions.
-# post_install_actions are executed in the context of the target project's .ddev directory.
 post_install_actions:
-  # - chmod +x ~/.ddev/commands/web/somecommand
-  # - touch ${DDEV_APPROOT}/somefile.${GOOS}.${DDEV_WEBSERVER}
-  # - perl -pi -e 's/oldstring/newstring/g' ${DDEV_APPROOT}/.ddev/docker-compose.addon-template.yaml
+  - |
+    #ddev-description:Replace package name
+    if [ -f ${DDEV_APPROOT}/composer.json ]; then
+      composer_name=$(jq -r '.name' ${DDEV_APPROOT}/composer.json)
+      if [ ! -z "$composer_name" ]; then
+        find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' "s|vendor/custom-extension-key|${composer_name}|g" {} +
+      fi
+    fi
 
-# Shell actions that can be done during removal of the add-on.
-# Files listed in project_files section will be automatically removed here if they contain #ddev-generated line.
-# removal_actions are executed in the context of the target project's .ddev directory.
+  - |
+    #ddev-description:Replace extension key and name
+    extension_name="${DDEV_PROJECT}"
+    if [ -z "$extension_name" ]; then
+      echo "DDEV_PROJECT environment variable is not set."
+      exit 1
+    fi
+    find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' "s/custom-extension-key/${extension_name}/g" {} +
+    
+    extension_key=$(echo "$extension_name" | tr '-' '_')
+    find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' "s/custom_extension_key/${extension_key}/g" {} +
+    
+    echo "Set extension key to ${extension_key} and extension name to ${extension_name} in"
+    echo " - .ddev/apache/10.conf"
+    echo " - .ddev/apache/20.conf"
+    echo " - .ddev/docker-compose.typo3-setup.yaml"
+
+  - |
+    #ddev-description:Create a config.typo3-setup.yaml
+    echo "Created .ddev/config.typo3-setup.yaml"
+    cat <<EOF >${DDEV_APPROOT}/.ddev/config.typo3-setup.yaml
+    type: php
+    docroot: .Build
+    additional_hostnames:
+      - 11.${DDEV_PROJECT}
+      - 12.${DDEV_PROJECT}
+      - 13.${DDEV_PROJECT}
+    hooks:
+       post-start:
+        - exec: mkdir -p /var/www/html/.Build/ && cp /var/www/html/.ddev/.typo3-setup/templates/* /var/www/html/.Build/
+
+  - |
+    #ddev-description:Create Tests folder
+    if [ ! -d "${DDEV_APPROOT}/Tests/.typo3-setup" ]; then
+      mkdir -p ${DDEV_APPROOT}/Tests
+      mv ${DDEV_APPROOT}/.ddev/.typo3-setup/Tests/.typo3-setup ${DDEV_APPROOT}/Tests/
+      rm -rf ${DDEV_APPROOT}/.ddev/.typo3-setup/Tests
+      echo "Created Tests/.typo3-setup folder"
+    fi
+
+  - |
+    #ddev-description:Update .gitignore
+    gitignore_path="${DDEV_APPROOT}/.gitignore"
+    entry=".Build/"
+
+    if [ -f "$gitignore_path" ]; then
+      if ! grep -q "^${entry}$" "$gitignore_path"; then
+        echo "$entry" >> "$gitignore_path"
+        echo "Added '${entry}' to .gitignore."
+      fi
+    else
+      # If .gitignore does not exist, create the file and add the entry
+      echo "$entry" > "$gitignore_path"
+      echo "Created .gitignore and added '${entry}'."
+    fi
+
+  - |
+    #ddev-description:Outro
+    echo "###############################################"
+    echo "✓ TYPO3 multi-version extension setup complete."
+    echo "You can now run 'ddev restart' to start the environment and 'ddev install all' to install the TYPO3 instances."
+    echo "Launch the intro page with 'ddev launch' or open ${DDEV_PRIMARY_URL}."
+    echo "For more information, see the https://github.com/jackd248/ddev-typo3-multi-version-extension/blob/main/README.md file."
+
 removal_actions:
-  # - rm ~/.ddev/commands/web/somecommand
-  # - |
-  #   if [ -f ${DDEV_APPROOT}/.ddev/docker-compose.addon-template_extras.yaml ]; then
-  #     if grep -q '#ddev-generated' ${DDEV_APPROOT}/.ddev/docker-compose.addon-template_extras.yaml; then
-  #       rm -f ${DDEV_APPROOT}/.ddev/docker-compose.addon-template_extras.yaml
-  #     else
-  #       echo "Unwilling to remove '${DDEV_APPROOT}/.ddev/docker-compose.addon-template_extras.yaml' because it does not have #ddev-generated in it; you can manually delete it if it is safe to delete."
-  #     fi
-  #   fi
-
-# Advanced usage - YAML files can be read in and then used as go template actions
-# in pre_install_actions and post_install_actions
-# See example in
-# https://github.com/ddev/ddev/blob/main/cmd/ddev/cmd/testdata/TestCmdAddonComplex/recipe/install.yaml
-yaml_read_files:
-  # someyaml: someyaml.yaml
-  # otheryaml: someotheryaml.yaml
+  - rm ${DDEV_APPROOT}/.ddev/config.typo3-setup.yaml
+  - rm -f ${DDEV_APPROOT}/.ddev/.typo3-setup/
+  - rm -rf ${DDEV_APPROOT}/Tests/.typo3-setup/

@@ -33,29 +33,36 @@ post_install_actions:
     if [ -f ${DDEV_APPROOT}/composer.json ]; then
       composer_name=$(jq -r '.name' ${DDEV_APPROOT}/composer.json)
       if [ ! -z "$composer_name" ]; then
-        find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' -e "s|vendor/custom-extension-key|${composer_name}|g" {} +
+    
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+          find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' -e "s|vendor/custom-extension-key|${composer_name}|g" {} +
+        else
+          find ${DDEV_APPROOT}/.ddev -type f -exec sed -e "s|vendor/custom-extension-key|${composer_name}|g" {} +
+        fi
       fi
     fi
 
   - |
     #ddev-description:Replace extension key and name
     extension_name="${DDEV_PROJECT}"
+    extension_key=$(echo "$extension_name" | tr '-' '_')
     if [ -z "$extension_name" ]; then
       echo "DDEV_PROJECT environment variable is not set."
       exit 1
     fi
     
-    if [ -d "${DDEV_APPROOT}/.ddev" ]; then
-      find ${DDEV_APPROOT}/.ddev -type f -exec sed -i'' -e "s/custom-extension-key/${extension_name}/g" {} +    
-      
-      extension_key=$(echo "$extension_name" | tr '-' '_')
-      find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' -e "s/custom_extension_key/${extension_key}/g" {} +
-      
-      echo "Set extension key to ${extension_key} and extension name to ${extension_name} in"
-      echo " - .ddev/apache/10.conf"
-      echo " - .ddev/apache/20.conf"
-      echo " - .ddev/docker-compose.typo3-setup.yaml"
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      find ${DDEV_APPROOT}/.ddev -type f -exec sed -i'' -e "s/custom-extension-key/${extension_name}/g" {} +   
+      find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' -e "s/custom_extension_key/${extension_key}/g" {} + 
+    else
+      find ${DDEV_APPROOT}/.ddev -type f -exec sed -e "s/custom-extension-key/${extension_name}/g" {} +    
+      find ${DDEV_APPROOT}/.ddev -type f -exec sed -e "s/custom_extension_key/${extension_key}/g" {} +
     fi
+    
+    echo "Set extension key to ${extension_key} and extension name to ${extension_name} in"
+    echo " - .ddev/apache/10.conf"
+    echo " - .ddev/apache/20.conf"
+    echo " - .ddev/docker-compose.typo3-setup.yaml"
   - |
     #ddev-description:Create a config.typo3-setup.yaml
     echo "Created .ddev/config.typo3-setup.yaml"

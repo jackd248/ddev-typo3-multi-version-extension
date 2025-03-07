@@ -44,16 +44,18 @@ post_install_actions:
       echo "DDEV_PROJECT environment variable is not set."
       exit 1
     fi
-    find ${DDEV_APPROOT}/.ddev -type f -exec sed -i'' -e "s/custom-extension-key/${extension_name}/g" {} +    
     
-    extension_key=$(echo "$extension_name" | tr '-' '_')
-    find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' -e "s/custom_extension_key/${extension_key}/g" {} +
-    
-    echo "Set extension key to ${extension_key} and extension name to ${extension_name} in"
-    echo " - .ddev/apache/10.conf"
-    echo " - .ddev/apache/20.conf"
-    echo " - .ddev/docker-compose.typo3-setup.yaml"
-
+    if [ -d "${DDEV_APPROOT}/.ddev" ]; then
+      find ${DDEV_APPROOT}/.ddev -type f -exec sed -i'' -e "s/custom-extension-key/${extension_name}/g" {} +    
+      
+      extension_key=$(echo "$extension_name" | tr '-' '_')
+      find ${DDEV_APPROOT}/.ddev -type f -exec sed -i '' -e "s/custom_extension_key/${extension_key}/g" {} +
+      
+      echo "Set extension key to ${extension_key} and extension name to ${extension_name} in"
+      echo " - .ddev/apache/10.conf"
+      echo " - .ddev/apache/20.conf"
+      echo " - .ddev/docker-compose.typo3-setup.yaml"
+    fi
   - |
     #ddev-description:Create a config.typo3-setup.yaml
     echo "Created .ddev/config.typo3-setup.yaml"

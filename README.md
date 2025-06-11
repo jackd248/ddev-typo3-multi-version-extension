@@ -1,7 +1,10 @@
 ddev-typo3-multi-version-extension
 ===============================
 
-[![tests](https://github.com/jackd248/ddev-typo3-multi-version-extension/actions/workflows/tests.yml/badge.svg)](https://github.com/jackd248/ddev-typo3-multi-version-extension/actions/workflows/tests.yml) ![project is maintained](https://img.shields.io/maintenance/yes/2025.svg)
+[![add-on registry](https://img.shields.io/badge/DDEV-Add--on_Registry-blue)](https://addons.ddev.com)
+[![tests](https://github.com/jackd248/ddev-typo3-multi-version-extension/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/jackd248/ddev-typo3-multi-version-extension/actions/workflows/tests.yml?query=branch%3Amain)
+[![last commit](https://img.shields.io/github/last-commit/jackd248/ddev-typo3-multi-version-extension)](https://github.com/jackd248/ddev-typo3-multi-version-extension/commits)
+[![release](https://img.shields.io/github/v/release/jackd248/ddev-typo3-multi-version-extension)](https://github.com/jackd248/ddev-typo3-multi-version-extension/releases/latest)
 
 
 ## What is ddev-typo3-multi-version-extension

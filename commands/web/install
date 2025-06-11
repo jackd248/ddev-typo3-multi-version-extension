@@ -4,6 +4,7 @@
 ## Description: Install TYPO3 instances.
 ## Usage: install
 ## Example: "ddev install" or "ddev install 12" or "ddev install all"
+## MutagenSync: true
 
 TYPO3=${1}
 

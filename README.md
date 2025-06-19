@@ -26,7 +26,7 @@ ddev-typo3-multi-version-extension is a DDEV add-on that provides a multi-versio
 Install the add-on with the following command:
 
 ```shell
-ddev add-on get ddev/ddev-typo3-multi-version-extension && ddev restart
+ddev add-on get jackd248/ddev-typo3-multi-version-extension && ddev restart
 ```
 
 After the installation, you can use the following command to open the intro page:
